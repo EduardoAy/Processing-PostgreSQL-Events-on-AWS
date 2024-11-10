@@ -1,4 +1,4 @@
-# Processing-PostgreSQL-Events-on-AWS
+# Processing PostgreSQL Events on AWS
 Processing PostgreSQL events on AWS ETL to obtain events (UPDATE, INSERT, DELETE) from PostgreSQL databases, and process them for later loading into other systems/databases.
 
 1) FUNCTIONAL DIAGRAM
@@ -16,7 +16,6 @@ This first Lambda can send the transformed data directly to another system (S3 /
 - In the case of forwarding, still within the first lambda, the final payload will be used to build the Postgres query. This Lambda writes to the Postgres Database, and forwards the payload to the second Lambda.
 4) The second Lambda receives the payload from the first, processes the content, and based on the clause type (INSERT or DELETE), produces the respective query and writes it to Redshift.
 5) The 2 lambdas, and all logs of the actions performed are available for monitoring on CloudWatch. 
-
 
 
 2) ACCESS POLICIES / CONFIGURATION
@@ -59,15 +58,8 @@ In order to improve response times to the account and certificate databases, 2 p
 Lambda configuration
 
 In Lambda, left menu (RDS Databases):
-Connect to an RDS Database -> using an existing database in the same VPC:
-
-Then, in the same menu, the respective proxy must be added to the database:
-
-
-Lambda Code
-	The code for the 2 lambdas can be found in the following repository:
-	https://github.com/reddrummer/data-logistics.lookup-table-etl/tree/lambda-code
-
+Connect to an RDS Database -> using an existing database in the same VPC.
+Then, in the same menu, the respective proxy must be added to the database
 
 5) Execution in the POSTGRESQL environment
 
@@ -76,8 +68,3 @@ These are custom triggers to send an RDS Postgres event of type INSERT, DELETE o
 Event type;
 Payload;
 Source.
-
-Trigger code
-Can be found in the repository below:
-
-https://github.com/reddrummer/data-logistics.lookup-table-etl/tree/lambda-code
