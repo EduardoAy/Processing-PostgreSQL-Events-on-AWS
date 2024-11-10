@@ -1,0 +1,172 @@
+import json
+import psycopg2
+import os
+import logging
+import boto3
+
+# Function to get the database connection
+def get_db_connection(proxy_host, db_port, db_name, db_user, db_password):
+    try:
+        connection = psycopg2.connect(
+            host=proxy_host,
+            port=db_port,
+            dbname=db_name,
+            user=db_user,
+            password=db_password
+        )
+        return connection
+    except psycopg2.Error as e:
+        logging.error(f"Error connecting to database: {e}")
+        return None
+
+# Function to invoke a Lambda
+def invoke_lambda(function_name, payload):
+    client = boto3.client('lambda')
+    response = client.invoke(
+        FunctionName=function_name, 
+        InvocationType='RequestResponse',
+        Payload=json.dumps(payload)
+    )
+    return response
+
+# Function to initialize all connections at once
+def initialize_connections():
+    
+    # Connection to DB1
+    conn_db1 = get_db_connection(
+        os.environ['PROXY_db1_HOST'], 
+        os.environ['DB_db1_PORT'],
+        os.environ['DB_db1_DBNAME'], 
+        os.environ['DB_db1_USERNAME'], 
+        os.environ['DB_db1_PASSWORD']
+    )
+    
+    if conn_db1 is None:
+        raise Exception("Error connecting to database.")
+
+    cursor_db1 = conn_db1.cursor()
+    
+    # Connection to Redshift - db2
+    conn_redshift = get_db_connection(
+        os.environ['REDSHIFT_ENDPOINT'],
+        os.environ['REDSHIFT_PORT'],
+        os.environ['REDSHIFT_DB'],
+        os.environ['REDSHIFT_USER'],
+        os.environ['REDSHIFT_PASSWORD']
+    )
+    
+    if conn_redshift is None:
+        raise Exception("Error connecting to database.")
+
+    cursor_redshift = conn_redshift.cursor()
+    
+    return conn_db1, cursor_db1, conn_redshift, cursor_redshift
+
+# Function to process insertion/update
+def process_insert_update(conn_db1, cursor_db1, conn_redshift, cursor_redshift, message):
+    
+    dados = message['data']
+    tipo = message['event_type']
+
+    # Query Example with parameters
+    query = """
+    SELECT a,b, c, %s, %s
+    FROM public.<TABLE NAME>
+    WHERE <COLUMN> = %s
+    """
+    
+    # JSON parameters
+    params = (dados['id'], dados['value'], dados['id'])
+
+    # Query Execution
+    cursor_account.execute(query, params)
+    
+    # Results
+    res = cursor_db1.fetchall()
+    
+    if res:
+            # Transform the tuple into a dictionary
+            res_stg = {
+                'id': res[0][0],
+                'type': res[0][1],
+                'value': res[0][2],
+                'name': res[0][3],
+                'city': res[0][4]
+            }
+    
+  <YOUR LOGIC HERE>
+  
+
+    # Sending the dictionary to the second Lambda
+    payload = {'event_type': tipo, 'results': res_stg}
+    print(payload)
+                
+    # Invoking the Lambda Function
+    function_lambda_redshift = '<ARN_REDSHIFT>'
+    response = invoke_lambda(function_lambda_redshift, payload)
+
+    query = f"""
+    INSERT INTO TABLE (FIELDS)
+    VALUES (VALUES);
+    """
+
+    # Query execution - Postgres
+    cursor_db1.execute(query)
+    conn_db1.commit()
+    
+    # Query execution - Redshift
+    cursor_redshift.execute(query)
+    conn_redshift.commit()
+    
+def process_delete(conn_db1, cursor_db1, conn_redshift, cursor_redshift, message):
+    
+    dados = message['data']
+    
+    # Sending the dictionary to the second Lambda
+    payload = message
+                
+    # Invoking the Lambda Function
+    function_lambda_redshift = '<ARN_LAMBDA>'
+    response = invoke_lambda(function_lambda_redshift, payload)
+    
+    # Transform values ​​into strings with double quotes
+    value = dados['value']
+
+    # Query
+    delete_query = """
+    DELETE FROM <TABLE NAME>
+    WHERE <COLUMN> = %s;
+    """
+
+    # Parameter extracted from JSON
+    params = (value,)
+
+    # Running the query - Postgres
+    cursor_db1.execute(delete_query, params)
+
+    # Running the query - Redshift
+    cursor_redshift.execute(delete_query, params)
+
+    # Confirming transactions
+    conn_db1.commit()
+    conn_redshift.commit()
+
+# Handler Lambda
+def lambda_handler(event, context):
+        
+    message = event
+    
+    # Initializes database connections only once
+    conn_db1, cursor_db1, conn_redshift, cursor_redshift = initialize_connections()
+
+    tipo = message['event_type']
+    source = message['source']
+       
+    # Identify message type - loop to execute command according to type
+    if source == <TABLE NAME>
+        if tipo == 'INSERT' or tipo == 'UPDATE':
+            process_insert_update(conn_db1, cursor_db1, conn_redshift, cursor_redshift, message)
+            print('insert_update')
+        elif tipo == 'DELETE':
+            process_delete(conn_db1, cursor_db1, conn_redshift, cursor_redshift, message)
+            print('delete') 
