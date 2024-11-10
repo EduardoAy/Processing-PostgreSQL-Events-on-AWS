@@ -10,12 +10,13 @@ The figure below represents the suggested diagram for the process.
 
 
 
-1) and 2) Triggers on database accounts and certificates are configured to fire a custom event when an INSERT, UPDATE or DELETE operation is performed;
-3) The first Lambda receives the events, and based on the type received, executes a specific programming logic.
+
+Itens 1 and 2: Triggers on database accounts and certificates are configured to fire a custom event when an INSERT, UPDATE or DELETE operation is performed;
+Item 3: The first Lambda receives the events, and based on the type received, executes a specific programming logic.
 This first Lambda can send the transformed data directly to another system (S3 / DB / etc), or forward the payload to another Lambda, for the purpose of separating the processing into layers.
 - In the case of forwarding, still within the first lambda, the final payload will be used to build the Postgres query. This Lambda writes to the Postgres Database, and forwards the payload to the second Lambda.
-4) The second Lambda receives the payload from the first, processes the content, and based on the clause type (INSERT or DELETE), produces the respective query and writes it to Redshift.
-5) The 2 lambdas, and all logs of the actions performed are available for monitoring on CloudWatch. 
+Item 4: The second Lambda receives the payload from the first, processes the content, and based on the clause type (INSERT or DELETE), produces the respective query and writes it to Redshift.
+Item 5: The 2 lambdas, and all logs of the actions performed are available for monitoring on CloudWatch. 
 
 
 2) ACCESS POLICIES / CONFIGURATION
@@ -63,7 +64,8 @@ Then, in the same menu, the respective proxy must be added to the database
 
 5) Execution in the POSTGRESQL environment
 
-Triggers pg_notify
+Triggers pg_notify:
+
 These are custom triggers to send an RDS Postgres event of type INSERT, DELETE or UPDATE to the first Lambda. The payload has been configured to send the following information:
 Event type;
 Payload;
